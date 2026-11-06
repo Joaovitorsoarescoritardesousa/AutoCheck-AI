@@ -17,9 +17,6 @@ import {
 const STORAGE_KEY_LAUDOS_HISTORY = 'autocheck_laudos_history';
 
 export default function App() {
-  // Mobile device mockup view state (true: smartphone frame, false: full screen)
-  const [isMobileDeviceView, setIsMobileDeviceView] = useState<boolean>(true);
-
   // Navigation tab state: 'search' | 'editor' | 'certificate'
   const [currentView, setCurrentView] = useState<'search' | 'editor' | 'certificate'>('search');
 
@@ -201,8 +198,6 @@ export default function App() {
 
   return (
     <MobileDeviceFrame
-      isMobileDeviceView={isMobileDeviceView}
-      onToggleView={setIsMobileDeviceView}
       activeTab={currentView}
       onSelectTab={handleSelectBottomTab}
       savedCount={laudoHistory.length}
@@ -210,18 +205,21 @@ export default function App() {
     >
       {/* Photo capture toast feedback */}
       {photoToast && (
-        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2">
+        <div className="fixed top-14 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2">
           <span>✓</span>
           <span>{photoToast}</span>
         </div>
       )}
 
-      {/* Mobile App Bar */}
+      {/* App Bar (Compact on mobile, desktop navigation on PC) */}
       <Header
         onOpenHistory={() => setIsHistoryOpen(true)}
         onNewLaudo={handleStartNewLaudo}
         onOpenAiInspection={() => handleOpenAiModal()}
         historyCount={laudoHistory.length}
+        activeTab={currentView}
+        onSelectTab={handleSelectBottomTab}
+        onQuickCamera={() => setIsQuickCameraOpen(true)}
       />
 
       {/* Main View Area inside the smartphone */}
