@@ -1,434 +1,309 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
+import { MobileDeviceFrame } from './components/MobileDeviceFrame';
 import { Header } from './components/Header';
-import { LocationBar } from './components/LocationBar';
-import { HomeHeroGrid } from './components/HomeHeroGrid';
-import { ProvidersList } from './components/ProvidersList';
-import { CrashAnalysisModal } from './components/CrashAnalysisModal';
-import { EmergencyModal } from './components/EmergencyModal';
-import { StickyEmergencyButton } from './components/StickyEmergencyButton';
-import { HistoryDrawer } from './components/HistoryDrawer';
-import { EmergencyNumbersModal } from './components/EmergencyNumbersModal';
-import { LocationPermissionModal } from './components/LocationPermissionModal';
-import { LocationDeniedBanner } from './components/LocationDeniedBanner';
-import { ManualLocationModal } from './components/ManualLocationModal';
-import { LocationMapVisual } from './components/LocationMapVisual';
-import { getProvidersForLocation } from './data/mockProviders';
+import { LaudoPlateSearch } from './components/LaudoPlateSearch';
+import { LaudoEditor } from './components/LaudoEditor';
+import { LaudoCertificateView } from './components/LaudoCertificateView';
+import { AiInspectionModal } from './components/AiInspectionModal';
+import { LaudoHistoryModal } from './components/LaudoHistoryModal';
+import { CameraViewfinderModal } from './components/CameraViewfinderModal';
+import { DEMO_LAUDOS, lookupOrGenerateLaudo, generateRealVehicleLaudo } from './data/mockVehicles';
 import {
-  ServiceCategory,
-  ServiceProvider,
-  UserLocation,
-  CrashHistoryItem,
-  CrashAnalysisResult,
-  EmergencyProblemId,
+  LaudoInspection,
+  AiInspectionResult,
+  InspectionPhoto,
 } from './types';
 
-const STORAGE_KEY_LOCATION_PERMISSION = 'autocheck_location_permission';
-const STORAGE_KEY_SAVED_LOCATION = 'autocheck_saved_location';
+const STORAGE_KEY_LAUDOS_HISTORY = 'autocheck_laudos_history';
 
 export default function App() {
-  // Current view state: 'home' | 'providers'
-  const [currentView, setCurrentView] = useState<'home' | 'providers'>('home');
-  const [selectedCategory, setSelectedCategory] = useState<ServiceCategory | 'todos'>('todos');
+  // Mobile device mockup view state (true: smartphone frame, false: full screen)
+  const [isMobileDeviceView, setIsMobileDeviceView] = useState<boolean>(true);
 
-  // Location state
-  const [location, setLocation] = useState<UserLocation>(() => {
+  // Navigation tab state: 'search' | 'editor' | 'certificate'
+  const [currentView, setCurrentView] = useState<'search' | 'editor' | 'certificate'>('search');
+
+  // Searching loading indicator
+  const [isSearchingPlate, setIsSearchingPlate] = useState<boolean>(false);
+
+  // Active Laudo
+  const [activeLaudo, setActiveLaudo] = useState<LaudoInspection>(() => DEMO_LAUDOS[0]);
+
+  // History of Laudos in localStorage
+  const [laudoHistory, setLaudoHistory] = useState<LaudoInspection[]>(() => {
     try {
-      const savedPerm = localStorage.getItem(STORAGE_KEY_LOCATION_PERMISSION);
-      const savedLoc = localStorage.getItem(STORAGE_KEY_SAVED_LOCATION);
-      if (savedLoc) {
-        const parsed = JSON.parse(savedLoc);
-        return {
-          ...parsed,
-          permissionStatus: (savedPerm as any) || 'prompt',
-        };
+      const saved = localStorage.getItem(STORAGE_KEY_LAUDOS_HISTORY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        if (Array.isArray(parsed) && parsed.length > 0) return parsed;
       }
-      return {
-        lat: -23.561684,
-        lng: -46.655981,
-        addressName: 'Av. Paulista, Bela Vista',
-        cityState: 'São Paulo - SP',
-        isAutoDetected: false,
-        permissionStatus: (savedPerm as any) || 'prompt',
-      };
+      return DEMO_LAUDOS;
     } catch {
-      return {
-        lat: -23.561684,
-        lng: -46.655981,
-        addressName: 'Av. Paulista, Bela Vista',
-        cityState: 'São Paulo - SP',
-        isAutoDetected: false,
-        permissionStatus: 'prompt',
-      };
+      return DEMO_LAUDOS;
     }
   });
-
-  const [isDetectingLocation, setIsDetectingLocation] = useState<boolean>(false);
-  const [showPermissionModal, setShowPermissionModal] = useState<boolean>(false);
-  const [showManualLocationModal, setShowManualLocationModal] = useState<boolean>(false);
 
   // Modals state
-  const [isCrashModalOpen, setIsCrashModalOpen] = useState<boolean>(false);
-  const [isEmergencyModalOpen, setIsEmergencyModalOpen] = useState<boolean>(false);
-  const [isHistoryDrawerOpen, setIsHistoryDrawerOpen] = useState<boolean>(false);
-  const [isEmergencyCallOpen, setIsEmergencyCallOpen] = useState<boolean>(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState<boolean>(false);
+  const [aiPresetPart, setAiPresetPart] = useState<string>('Geral');
+  const [isHistoryOpen, setIsHistoryOpen] = useState<boolean>(false);
+  const [isQuickCameraOpen, setIsQuickCameraOpen] = useState<boolean>(false);
+  const [photoToast, setPhotoToast] = useState<string | null>(null);
 
-  // Crash history in localStorage
-  const [crashHistory, setCrashHistory] = useState<CrashHistoryItem[]>(() => {
+  // Save history to localStorage
+  const saveHistoryToStorage = (updatedHistory: LaudoInspection[]) => {
+    setLaudoHistory(updatedHistory);
     try {
-      const saved = localStorage.getItem('autocheck_history');
-      return saved ? JSON.parse(saved) : [];
-    } catch {
-      return [];
+      localStorage.setItem(STORAGE_KEY_LAUDOS_HISTORY, JSON.stringify(updatedHistory));
+    } catch (e) {
+      console.error('Failed to save laudo history:', e);
     }
-  });
-
-  // Providers list based on location and category
-  const [providers, setProviders] = useState<ServiceProvider[]>([]);
-  const [pendingCategory, setPendingCategory] = useState<ServiceCategory | null>(null);
-
-  // Check initial permission status on mount WITHOUT showing intrusive modal immediately
-  // Only silently restore GPS if user previously granted permission
-  useEffect(() => {
-    const savedPerm = localStorage.getItem(STORAGE_KEY_LOCATION_PERMISSION);
-    if (savedPerm === 'granted') {
-      fetchCurrentGpsPosition();
-    }
-  }, []);
-
-  // Update providers when location or category changes
-  useEffect(() => {
-    const updated = getProvidersForLocation(
-      selectedCategory,
-      location.lat,
-      location.lng,
-      location.addressName
-    );
-    setProviders(updated);
-  }, [selectedCategory, location.lat, location.lng, location.addressName]);
-
-  // Execute native device GPS geolocation
-  const fetchCurrentGpsPosition = (onComplete?: () => void) => {
-    if (!navigator.geolocation) {
-      setLocation((prev) => ({
-        ...prev,
-        permissionStatus: 'denied',
-        isAutoDetected: false,
-      }));
-      onComplete?.();
-      return;
-    }
-
-    setIsDetectingLocation(true);
-
-    navigator.geolocation.getCurrentPosition(
-      async (pos) => {
-        const { latitude, longitude } = pos.coords;
-
-        let addressName = `Coordenadas: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`;
-        let cityState = 'Localização Detectada via GPS';
-
-        // Attempt reverse geocoding via OpenStreetMap Nominatim
-        try {
-          const controller = new AbortController();
-          const timeoutId = setTimeout(() => controller.abort(), 4000);
-          const res = await fetch(
-            `https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${latitude}&lon=${longitude}`,
-            { signal: controller.signal }
-          );
-          clearTimeout(timeoutId);
-          if (res.ok) {
-            const data = await res.json();
-            const road = data.address?.road || data.address?.suburb || 'Sua localização atual';
-            const city = data.address?.city || data.address?.town || data.address?.municipality || '';
-            const state = data.address?.state_code || data.address?.state || '';
-            addressName = road;
-            cityState = city && state ? `${city} - ${state}` : city || state || 'Brasil';
-          }
-        } catch (e) {
-          // Fallback to coordinates
-        }
-
-        const newLoc: UserLocation = {
-          lat: latitude,
-          lng: longitude,
-          addressName,
-          cityState,
-          isAutoDetected: true,
-          permissionStatus: 'granted',
-          isManualMode: false,
-        };
-
-        setLocation(newLoc);
-        setIsDetectingLocation(false);
-        setShowPermissionModal(false);
-
-        try {
-          localStorage.setItem(STORAGE_KEY_LOCATION_PERMISSION, 'granted');
-          localStorage.setItem(STORAGE_KEY_SAVED_LOCATION, JSON.stringify(newLoc));
-        } catch {
-          // ignore storage error
-        }
-
-        onComplete?.();
-      },
-      (error) => {
-        console.warn('Geolocation error / denied:', error.message);
-        setIsDetectingLocation(false);
-        setShowPermissionModal(false);
-        setLocation((prev) => ({
-          ...prev,
-          permissionStatus: 'denied',
-          isAutoDetected: false,
-        }));
-        try {
-          localStorage.setItem(STORAGE_KEY_LOCATION_PERMISSION, 'denied');
-        } catch {
-          // ignore
-        }
-        onComplete?.();
-      },
-      { enableHighAccuracy: true, timeout: 9000 }
-    );
   };
 
-  // User accepts permission in modal
-  const handleAllowPermission = () => {
-    setShowPermissionModal(false);
-    fetchCurrentGpsPosition(() => {
-      if (pendingCategory) {
-        setSelectedCategory(pendingCategory);
-        setCurrentView('providers');
-        setPendingCategory(null);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Search by Plate: REAL LIFE QUERY -> OPENS COMPLETE LAUDO DIRECTLY!
+  const handleSearchPlate = async (plate: string) => {
+    const clean = plate.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
+    setIsSearchingPlate(true);
+
+    try {
+      const laudoFoundOrGenerated = await lookupOrGenerateLaudo(
+        clean,
+        'Posto Central de Vistoria',
+        'São Paulo - SP',
+        laudoHistory
+      );
+
+      setActiveLaudo(laudoFoundOrGenerated);
+      handleSaveLaudo(laudoFoundOrGenerated);
+
+      // IMMEDIATELY OPEN THE COMPLETE LAUDO AS REQUESTED!
+      setCurrentView('certificate');
+    } catch (err) {
+      console.error('Error during plate query:', err);
+      const fallback = generateRealVehicleLaudo(clean, 'Posto Central de Vistoria', 'São Paulo - SP');
+      setActiveLaudo(fallback);
+      handleSaveLaudo(fallback);
+      setCurrentView('certificate');
+    } finally {
+      setIsSearchingPlate(false);
+    }
+  };
+
+  // Select Demo -> Directly shows the complete Laudo
+  const handleSelectDemo = (demo: LaudoInspection) => {
+    setActiveLaudo(demo);
+    setCurrentView('certificate');
+  };
+
+  // Start New Laudo
+  const handleStartNewLaudo = () => {
+    const randomSuffix = Math.floor(10 + Math.random() * 89);
+    const newLaudo = generateRealVehicleLaudo(`NOVA${randomSuffix}`, 'Posto Central de Vistoria', 'São Paulo - SP');
+    setActiveLaudo(newLaudo);
+    setCurrentView('editor');
+  };
+
+  // Save Laudo to history
+  const handleSaveLaudo = (laudoToSave: LaudoInspection) => {
+    setLaudoHistory((prev) => {
+      const exists = prev.some((l) => l.id === laudoToSave.id);
+      let updated: LaudoInspection[];
+      if (exists) {
+        updated = prev.map((l) => (l.id === laudoToSave.id ? laudoToSave : l));
+      } else {
+        updated = [laudoToSave, ...prev];
       }
+      try {
+        localStorage.setItem(STORAGE_KEY_LAUDOS_HISTORY, JSON.stringify(updated));
+      } catch (e) {
+        console.error('Failed to save to localStorage:', e);
+      }
+      return updated;
     });
   };
 
-  // User declines permission in modal ("Agora não")
-  const handleDenyPermission = () => {
-    setShowPermissionModal(false);
-    setLocation((prev) => ({
-      ...prev,
-      permissionStatus: 'denied',
-      isAutoDetected: false,
-    }));
-    try {
-      localStorage.setItem(STORAGE_KEY_LOCATION_PERMISSION, 'denied');
-    } catch {
-      // ignore
-    }
-    if (pendingCategory) {
-      setSelectedCategory(pendingCategory);
-      setCurrentView('providers');
-      setPendingCategory(null);
-      window.scrollTo({ top: 0, behavior: 'smooth' });
-    }
+  // Add captured photo directly to the active Laudo
+  const handleAddPhoto = (photo: InspectionPhoto) => {
+    setActiveLaudo((prev) => {
+      const updatedPhotos = [photo, ...prev.photos];
+      const updatedLaudo = { ...prev, photos: updatedPhotos };
+      handleSaveLaudo(updatedLaudo);
+      return updatedLaudo;
+    });
   };
 
-  // User sets manual location
-  const handleSelectManualLocation = (
-    addressName: string,
-    cityState: string,
-    lat: number,
-    lng: number
-  ) => {
-    const updated: UserLocation = {
-      lat,
-      lng,
-      addressName,
-      cityState,
-      isAutoDetected: false,
-      permissionStatus: location.permissionStatus,
-      isManualMode: true,
-    };
-    setLocation(updated);
-    try {
-      localStorage.setItem(STORAGE_KEY_SAVED_LOCATION, JSON.stringify(updated));
-    } catch {
-      // ignore
-    }
+  // Remove photo from active Laudo
+  const handleRemovePhoto = (id: string) => {
+    setActiveLaudo((prev) => {
+      const updatedPhotos = prev.photos.filter((p) => p.id !== id);
+      const updatedLaudo = { ...prev, photos: updatedPhotos };
+      handleSaveLaudo(updatedLaudo);
+      return updatedLaudo;
+    });
   };
 
-  // Contextual permission: when user chooses a service, request permission if not yet decided
-  const handleSelectCategory = (cat: ServiceCategory) => {
-    if (location.permissionStatus === 'prompt') {
-      setPendingCategory(cat);
-      setShowPermissionModal(true);
-      return;
-    }
-    setSelectedCategory(cat);
-    setCurrentView('providers');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  // Delete Laudo
+  const handleDeleteLaudo = (id: string) => {
+    const updated = laudoHistory.filter((l) => l.id !== id);
+    saveHistoryToStorage(updated);
   };
 
-  const handleSelectEmergencyProblem = (
-    _problemId: EmergencyProblemId,
-    category: ServiceCategory
-  ) => {
-    setIsEmergencyModalOpen(false);
-    setSelectedCategory(category);
-    setCurrentView('providers');
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+  const handleClearAllLaudos = () => {
+    saveHistoryToStorage([]);
   };
 
-  const handleSaveToHistory = (result: CrashAnalysisResult, photoData: string) => {
-    const newItem: CrashHistoryItem = {
-      id: `hist-${Date.now()}`,
-      date: new Date().toISOString(),
-      photoUrl: photoData,
-      damage: result.identifiedDamage,
-      severity: result.severity,
-      estimate: result.estimatedCost.formattedRange,
-      recommendedService: result.recommendedCategoryLabel,
-      safeToDrive: result.safeToDrive,
-      needsTowTruck: result.needsTowTruck,
+  // AI Inspection Modal Handlers
+  const handleOpenAiModal = (presetPart?: string) => {
+    setAiPresetPart(presetPart || 'Geral (Carroceria / Estrutura)');
+    setIsAiModalOpen(true);
+  };
+
+  const handleApplyAiResultToLaudo = (result: AiInspectionResult, photoUrl: string) => {
+    const newPhoto: InspectionPhoto = {
+      id: `photo-${Date.now()}`,
+      category: 'avaria',
+      label: result.identifiedComponent,
+      url: photoUrl,
+      aiAnalysis: `${result.visualCondition}. Risco: ${result.structuralRisk}. Observação: ${result.technicalObservations}`,
     };
 
-    const updated = [newItem, ...crashHistory];
-    setCrashHistory(updated);
-    try {
-      localStorage.setItem('autocheck_history', JSON.stringify(updated.slice(0, 20)));
-    } catch {
-      // Storage limit handling
-    }
+    setActiveLaudo((prev) => {
+      const photos = [newPhoto, ...prev.photos];
+      const next = { ...prev, photos };
+      if (result.verdictImpact === 'Reprovado') {
+        next.verdict = 'REPROVADO';
+        next.score = Math.min(next.score, 45);
+        next.apontamentos = [
+          `Reprovação em ${result.identifiedComponent}: ${result.visualCondition}`,
+          ...next.apontamentos,
+        ];
+      } else if (result.verdictImpact === 'Apontamento') {
+        if (next.verdict === 'APROVADO') next.verdict = 'APROVADO COM APONTAMENTO';
+        next.score = Math.min(next.score, 85);
+        next.apontamentos = [
+          `Apontamento em ${result.identifiedComponent}: ${result.visualCondition}`,
+          ...next.apontamentos,
+        ];
+      }
+      handleSaveLaudo(next);
+      return next;
+    });
   };
 
-  const handleClearHistory = () => {
-    setCrashHistory([]);
-    localStorage.removeItem('autocheck_history');
+  // Bottom navigation tab click handler
+  const handleSelectBottomTab = (tab: string) => {
+    if (tab === 'history') {
+      setIsHistoryOpen(true);
+    } else if (tab === 'search' || tab === 'editor' || tab === 'certificate') {
+      setCurrentView(tab);
+    }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-amber-500 selection:text-slate-950 pb-16">
-      {/* Top Header */}
+    <MobileDeviceFrame
+      isMobileDeviceView={isMobileDeviceView}
+      onToggleView={setIsMobileDeviceView}
+      activeTab={currentView}
+      onSelectTab={handleSelectBottomTab}
+      savedCount={laudoHistory.length}
+      onQuickCamera={() => setIsQuickCameraOpen(true)}
+    >
+      {/* Photo capture toast feedback */}
+      {photoToast && (
+        <div className="fixed top-12 left-1/2 -translate-x-1/2 z-50 bg-emerald-600 text-white text-xs font-bold px-4 py-2 rounded-full shadow-lg flex items-center gap-1.5 animate-in fade-in slide-in-from-top-2">
+          <span>✓</span>
+          <span>{photoToast}</span>
+        </div>
+      )}
+
+      {/* Mobile App Bar */}
       <Header
-        onOpenHistory={() => setIsHistoryDrawerOpen(true)}
-        onOpenEmergencyCall={() => setIsEmergencyCallOpen(true)}
-        historyCount={crashHistory.length}
+        onOpenHistory={() => setIsHistoryOpen(true)}
+        onNewLaudo={handleStartNewLaudo}
+        onOpenAiInspection={() => handleOpenAiModal()}
+        historyCount={laudoHistory.length}
       />
 
-      {/* Main Container */}
-      <main className="flex-1 w-full max-w-md mx-auto px-4 py-3 space-y-4">
-        {/* Banner shown if user denied or haven't authorized location */}
-        {location.permissionStatus === 'denied' && (
-          <LocationDeniedBanner
-            onRequestPermission={fetchCurrentGpsPosition}
-            onOpenManualModal={() => setShowManualLocationModal(true)}
+      {/* Main View Area inside the smartphone */}
+      <div className="space-y-3">
+        {/* VIEW 1: SEARCH & CONSULTATION */}
+        {currentView === 'search' && (
+          <LaudoPlateSearch
+            onSearchPlate={handleSearchPlate}
+            onSelectDemoLaudo={handleSelectDemo}
+            onOpenAiQuickCheck={() => handleOpenAiModal()}
+            isSearching={isSearchingPlate}
           />
         )}
 
-        {/* Location Bar with clear indicator if GPS is active or manual */}
-        <LocationBar
-          location={location}
-          isDetecting={isDetectingLocation}
-          onRefreshLocation={fetchCurrentGpsPosition}
-          onOpenManualModal={() => setShowManualLocationModal(true)}
-          onRequestPermission={fetchCurrentGpsPosition}
-        />
-
-        {/* Visual Map Stage & Nearest services preview (shown after user authorized or picked location) */}
-        {location.permissionStatus === 'granted' && (
-          <LocationMapVisual
-            location={location}
-            providers={providers}
-            onSelectCategory={handleSelectCategory}
+        {/* VIEW 2: VISTORIA / LAUDO EDITOR */}
+        {currentView === 'editor' && (
+          <LaudoEditor
+            laudo={activeLaudo}
+            onUpdateLaudo={(updated) => {
+              setActiveLaudo(updated);
+              handleSaveLaudo(updated);
+            }}
+            onViewCertificate={() => setCurrentView('certificate')}
+            onOpenAiForPanel={(panelName) => handleOpenAiModal(panelName)}
+            onAddPhoto={handleAddPhoto}
+            onRemovePhoto={handleRemovePhoto}
           />
         )}
 
-        {currentView === 'home' ? (
-          /* Home Screen: 4 main buttons + highlighted crash analysis */
-          <div className="space-y-4 animate-in fade-in duration-150">
-            <HomeHeroGrid
-              onSelectCategory={handleSelectCategory}
-              onOpenCrashModal={() => setIsCrashModalOpen(true)}
-              onSelectEmergencyMode={() => setIsEmergencyModalOpen(true)}
-            />
-
-            {/* Quick Tips for Drivers in Emergency */}
-            <div className="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-4 text-xs text-slate-400 space-y-2">
-              <div className="flex items-center gap-2 text-slate-200 font-bold">
-                <span>🛡️ Protocolo de Segurança Imediato:</span>
-              </div>
-              <ul className="space-y-1 pl-4 list-disc text-slate-400 text-[11px]">
-                <li>Acione o pisca-alerta imediatamente.</li>
-                <li>Se possível, pare o carro no acostamento ou faixa da direita.</li>
-                <li>Coloque o triângulo de sinalização a pelo menos 30 passos (~30 metros).</li>
-                <li>Permaneça fora da pista, preferencialmente atrás de muretas ou guard-rails.</li>
-              </ul>
-            </div>
-          </div>
-        ) : (
-          /* Providers List Screen */
-          <div className="animate-in fade-in duration-150">
-            <ProvidersList
-              category={selectedCategory}
-              providers={providers}
-              userAddress={location.addressName}
-              onBackToHome={() => setCurrentView('home')}
-              onFilterChange={(cat) => setSelectedCategory(cat)}
-            />
-          </div>
+        {/* VIEW 3: OFFICIAL COMPLETE LAUDO CERTIFICATE */}
+        {currentView === 'certificate' && (
+          <LaudoCertificateView
+            laudo={activeLaudo}
+            onBackToEdit={() => setCurrentView('editor')}
+            onSaveToHistory={handleSaveLaudo}
+            onAddPhoto={handleAddPhoto}
+            onRemovePhoto={handleRemovePhoto}
+          />
         )}
-      </main>
+      </div>
 
-      {/* Sticky Bottom Emergency Button */}
-      <StickyEmergencyButton
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          setCurrentView('providers');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
+      {/* AI Photo Inspection Modal */}
+      <AiInspectionModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        presetPartName={aiPresetPart}
+        onApplyResultToLaudo={handleApplyAiResultToLaudo}
+      />
+
+      {/* Saved Laudos History Modal */}
+      <LaudoHistoryModal
+        isOpen={isHistoryOpen}
+        onClose={() => setIsHistoryOpen(false)}
+        history={laudoHistory}
+        onSelectLaudo={(selected) => {
+          setActiveLaudo(selected);
+          setCurrentView('certificate');
+        }}
+        onDeleteLaudo={handleDeleteLaudo}
+        onClearAll={handleClearAllLaudos}
+      />
+
+      {/* Global Quick Camera Modal */}
+      <CameraViewfinderModal
+        isOpen={isQuickCameraOpen}
+        onClose={() => setIsQuickCameraOpen(false)}
+        categoryLabel="Foto da Vistoria Cautelar"
+        instruction="Aponte a câmera para o veículo, peça ou identificação e fotografe"
+        onCapturePhoto={(photoBase64) => {
+          const newPhoto: InspectionPhoto = {
+            id: `photo-${Date.now()}`,
+            category: 'frente',
+            label: `Foto Vistoria (${activeLaudo.vehicle.placa || 'Veículo'})`,
+            url: photoBase64,
+            aiAnalysis: 'Foto registrada diretamente pela câmera do aplicativo.',
+          };
+          handleAddPhoto(newPhoto);
+          setIsQuickCameraOpen(false);
+          setPhotoToast(`Foto anexada à vistoria de ${activeLaudo.vehicle.placa || 'veículo'}!`);
+          setTimeout(() => setPhotoToast(null), 3500);
         }}
       />
-
-      {/* Permission Dialog (Shown on first entry or when requested) */}
-      <LocationPermissionModal
-        isOpen={showPermissionModal}
-        onRequestPermission={handleAllowPermission}
-        onDenyPermission={handleDenyPermission}
-      />
-
-      {/* Manual Location Search Modal */}
-      <ManualLocationModal
-        isOpen={showManualLocationModal}
-        onClose={() => setShowManualLocationModal(false)}
-        currentLocation={location}
-        onSelectLocation={handleSelectManualLocation}
-      />
-
-      {/* Modals & Drawers */}
-      <CrashAnalysisModal
-        isOpen={isCrashModalOpen}
-        onClose={() => setIsCrashModalOpen(false)}
-        onSelectCategory={(cat) => {
-          setSelectedCategory(cat);
-          setCurrentView('providers');
-          window.scrollTo({ top: 0, behavior: 'smooth' });
-        }}
-        onSaveToHistory={handleSaveToHistory}
-      />
-
-      <EmergencyModal
-        isOpen={isEmergencyModalOpen}
-        onClose={() => setIsEmergencyModalOpen(false)}
-        onSelectProblem={handleSelectEmergencyProblem}
-        onOpenCrashModal={() => setIsCrashModalOpen(true)}
-      />
-
-      <HistoryDrawer
-        isOpen={isHistoryDrawerOpen}
-        onClose={() => setIsHistoryDrawerOpen(false)}
-        history={crashHistory}
-        onClearHistory={handleClearHistory}
-        onSelectHistoryItem={(_item) => {
-          setIsHistoryDrawerOpen(false);
-          setIsCrashModalOpen(true);
-        }}
-      />
-
-      <EmergencyNumbersModal
-        isOpen={isEmergencyCallOpen}
-        onClose={() => setIsEmergencyCallOpen(false)}
-      />
-    </div>
+    </MobileDeviceFrame>
   );
 }

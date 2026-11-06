@@ -1,6 +1,6 @@
 {
   "name": "AutoCheck AI",
-  "description": "Socorro rápido para o motorista: mecânico, borracheiro, eletricista, guincho e análise inteligente de batida por IA.",
-  "requestFramePermissions": ["camera", "geolocation"],
+  "description": "Laudo cautelar veicular, perícia de identificação, integridade estrutural, micrômetro de pintura e análise por IA.",
+  "requestFramePermissions": ["camera"],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }
