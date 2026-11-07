@@ -141,6 +141,27 @@ export const LaudoCertificateView: React.FC<LaudoCertificateViewProps> = ({
           </div>
         </div>
 
+        {/* Identificação de Dados Demonstrativos Fictícios (Não oficial DETRAN/SENATRAN) */}
+        {(laudo.isDemonstrativeScenario || laudo.vehicle.placa.startsWith('DEMO')) && (
+          <div className="rounded-xl border-2 border-amber-300 bg-amber-50/90 p-3 text-amber-950 flex items-start gap-2.5 text-xs shadow-2xs">
+            <AlertTriangle className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div className="min-w-0 flex-1">
+              <div className="flex items-center gap-2 flex-wrap">
+                <span className="font-extrabold text-[10px] uppercase tracking-wider text-amber-900 bg-amber-200/90 px-2 py-0.5 rounded border border-amber-300">
+                  Cenário Demonstrativo • Dados Fictícios
+                </span>
+                <span className="text-[10px] text-amber-800 font-bold">
+                  Placa de Demonstração ({laudo.vehicle.placa})
+                </span>
+              </div>
+              <p className="text-[11px] text-amber-900 mt-1 leading-relaxed font-medium">
+                {laudo.demonstrativeDisclaimer ||
+                  'Este laudo apresenta um cenário demonstrativo para exibição do aplicativo. Os dados são fictícios e não representam informações oficiais do DETRAN, SENATRAN ou de qualquer base governamental real.'}
+              </p>
+            </div>
+          </div>
+        )}
+
         {/* Verdict Stamp */}
         <div
           className={`rounded-2xl p-3.5 border-2 flex items-center justify-between gap-3 ${

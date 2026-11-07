@@ -110,6 +110,8 @@ export interface LaudoInspection {
   verdict: LaudoVerdict;
   resumoParecer: string;
   apontamentos: string[];
+  isDemonstrativeScenario?: boolean;
+  demonstrativeDisclaimer?: string;
 }
 
 export interface UserLocation {

@@ -99,43 +99,44 @@ export const LaudoPlateSearch: React.FC<LaudoPlateSearchProps> = ({
       {/* Quick Demo Vehicles */}
       <div className="space-y-2">
         <div className="flex items-center justify-between text-xs">
-          <span className="font-bold text-slate-800 flex items-center gap-1">
+          <span className="font-bold text-slate-800 flex items-center gap-1.5">
             <FileSearch className="w-3.5 h-3.5 text-blue-600" />
-            Exemplos de Laudo Cautelar:
+            Cenários de Demonstração Fixos:
           </span>
-          <span className="text-[10px] text-slate-500">1 toque para abrir</span>
+          <span className="text-[10px] text-slate-500 font-semibold bg-slate-100 px-2 py-0.5 rounded-full border border-slate-200">
+            Dados Fictícios
+          </span>
         </div>
 
         <div className="space-y-2">
           {DEMO_LAUDOS.map((demo) => {
             const isAprovado = demo.verdict === 'APROVADO';
-            const isApontamento = demo.verdict === 'APROVADO COM APONTAMENTO';
+            const isDemo1 = demo.vehicle.placa === 'DEMO001';
 
             return (
               <button
                 key={demo.id}
                 type="button"
                 onClick={() => onSelectDemoLaudo(demo)}
-                className="w-full text-left p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-400 transition-all flex items-center justify-between gap-3 shadow-2xs group active:scale-[0.99]"
+                className="w-full text-left p-3 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 hover:border-blue-400 transition-all flex items-center justify-between gap-3 shadow-2xs group active:scale-[0.99] cursor-pointer"
               >
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-2 mb-0.5">
-                    <span className="font-mono font-bold text-xs text-slate-900 bg-slate-100 px-1.5 py-0.5 rounded border border-slate-200">
+                  <div className="flex items-center gap-2 mb-1 flex-wrap">
+                    <span className="font-mono font-black text-xs text-slate-900 bg-slate-100 px-2 py-0.5 rounded-md border border-slate-300 shadow-2xs">
                       {demo.vehicle.placa}
                     </span>
                     <span
-                      className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold ${
                         isAprovado
                           ? 'bg-emerald-50 text-emerald-700 border border-emerald-200'
-                          : isApontamento
-                          ? 'bg-amber-50 text-amber-700 border border-amber-200'
                           : 'bg-rose-50 text-rose-700 border border-rose-200'
                       }`}
                     >
-                      {isAprovado && <CheckCircle2 className="w-2.5 h-2.5" />}
-                      {isApontamento && <AlertTriangle className="w-2.5 h-2.5" />}
-                      {!isAprovado && !isApontamento && <XCircle className="w-2.5 h-2.5" />}
+                      {isAprovado ? <CheckCircle2 className="w-3 h-3" /> : <XCircle className="w-3 h-3" />}
                       <span>{demo.verdict}</span>
+                    </span>
+                    <span className="text-[9px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200/80 uppercase tracking-tight">
+                      {isDemo1 ? 'Sem Irregularidades' : 'Com Irregularidades'}
                     </span>
                   </div>
 
@@ -143,17 +144,23 @@ export const LaudoPlateSearch: React.FC<LaudoPlateSearchProps> = ({
                     {demo.vehicle.marca} {demo.vehicle.modelo} {demo.vehicle.versao}
                   </p>
 
-                  <div className="flex items-center gap-2 text-[10px] text-slate-500 mt-0.5">
+                  <p className="text-[10px] text-slate-500 mt-0.5 leading-snug">
+                    {isDemo1
+                      ? 'Nenhuma irregularidade registrada • Pintura e estrutura originais • Score 100/100'
+                      : 'Irregularidades registradas • Solda na longarina, leilão média monta e massa • Score 38/100'}
+                  </p>
+
+                  <div className="flex items-center gap-2 text-[10px] text-slate-400 mt-1">
                     <span>FIPE: R$ {demo.vehicle.fipe.valorFipe.toLocaleString('pt-BR')}</span>
                     <span>•</span>
                     <span>{demo.vehicle.km.toLocaleString('pt-BR')} km</span>
                     <span>•</span>
-                    <strong className="text-slate-700">Score {demo.score}/100</strong>
+                    <span className="text-amber-700 font-semibold text-[9px]">Simulação Demonstrativa</span>
                   </div>
                 </div>
 
-                <div className="w-7 h-7 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
-                  <ArrowRight className="w-3.5 h-3.5" />
+                <div className="w-8 h-8 rounded-lg bg-blue-50 text-blue-600 flex items-center justify-center shrink-0 group-hover:bg-blue-600 group-hover:text-white transition-colors">
+                  <ArrowRight className="w-4 h-4" />
                 </div>
               </button>
             );

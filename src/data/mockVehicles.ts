@@ -484,14 +484,268 @@ export function generateRealVehicleLaudo(plate: string, address: string, citySta
   };
 }
 
-// 3 Standard Demo Vehicles (Honda Civic, Gol, Jeep Compass)
+// 1. PRIMEIRA PLACA — VEÍCULO SEM IRREGULARIDADES (DEMO001 - APROVADO)
+export const DEMO_001_LAUDO: LaudoInspection = {
+  id: 'laudo-demo001-fixo',
+  numeroLaudo: 'LC-DEMO-001/2026',
+  codigoAutenticidade: 'DEMO-001-APROV-OK',
+  dataEmissao: '06/11/2026',
+  horaEmissao: '14:30',
+  cidadeUf: 'São Paulo - SP',
+  enderecoVistoria: 'Unidade Central de Demonstração',
+  vistoriadorNome: 'Perito Vistoriador Demonstrativo',
+  vistoriadorCertificado: 'Ambiente de Testes / Certificação Demonstração',
+  isDemonstrativeScenario: true,
+  demonstrativeDisclaimer: 'DADOS DEMONSTRATIVOS FICTÍCIOS — Cenário de teste para demonstração de veículo sem irregularidades. Não constitui informação de base oficial do DETRAN/SENATRAN.',
+  vehicle: {
+    placa: 'DEMO001',
+    marca: 'Toyota',
+    modelo: 'Corolla',
+    versao: 'Altis 2.0 16V Flex CVT',
+    anoFab: 2023,
+    anoMod: 2024,
+    cor: 'Branco Pérola',
+    combustivel: 'Flex',
+    cambio: 'Automático',
+    chassi: '9BRBL42E0P0849201',
+    motor: 'M20AFKS849120',
+    renavam: '01284918234',
+    km: 28450,
+    municipio: 'São Paulo - SP',
+    fipe: {
+      valorFipe: 168900,
+      codigoFipe: '002184-9',
+      mesReferencia: 'Novembro de 2026',
+      comparativoMercado: 'Dentro do valor médio de mercado',
+    },
+    qtdProprietarios: 1,
+    tipoUsoAnterior: 'Particular',
+    historicoKm: [
+      { data: '15/07/2023', km: 10200, origem: 'Revisão Concessionária Toyota', status: 'regular' },
+      { data: '22/02/2024', km: 20150, origem: 'Revisão Concessionária Toyota', status: 'regular' },
+      { data: '06/11/2026', km: 28450, origem: 'Vistoria Cautelar Atual', status: 'regular' },
+    ],
+  },
+  docCheck: {
+    leilao: 'Nenhum',
+    sinistro: false,
+    rouboFurto: 'Nada Consta',
+    bloqueioJudicial: 'Nada Consta',
+    debitosMultas: 'Quitado / Sem débitos',
+    valorDebitosTotal: 0,
+    gravame: 'Sem restrição (Livre)',
+    recall: 'Nenhum recall pendente',
+  },
+  structuralCheck: DEFAULT_STRUCTURAL_ITEMS.map((item) => ({
+    ...item,
+    status: 'original',
+    description: 'Item original de fábrica sem corte, emenda ou deformação.',
+  })),
+  paintPanels: DEFAULT_PAINT_PANELS.map((panel) => ({
+    ...panel,
+    status: 'original',
+    notes: 'Pintura original de montadora (dentro do padrão de fábrica)',
+  })),
+  mechanicalCheck: {
+    pneus: {
+      dianteiroEsqMm: 6.2,
+      dianteiroDirMm: 6.1,
+      traseiroEsqMm: 6.8,
+      traseiroDirMm: 6.7,
+      estepe: 'Excelente',
+    },
+    vazamentoFluidos: 'Nenhum vazamento',
+    vidrosChassi: 'Todos os vidros originais com gravação',
+    airbagAbs: 'Sistemas operantes sem falhas',
+    motorFuncionamento: 'Marcha lenta e ruído normais',
+    etiquetasIdentificacao: 'Todas originais presentes (ETA/VIS)',
+  },
+  photos: [
+    {
+      id: 'photo-demo1-1',
+      category: 'frente',
+      label: 'Frente do Veículo',
+      url: 'https://images.unsplash.com/photo-1621007947382-bb3c3994e3fb?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Alinhamento de para-choque, capô e conjunto óptico 100% original de fábrica sem avarias.',
+    },
+    {
+      id: 'photo-demo1-2',
+      category: 'lateral_esq',
+      label: 'Lateral Esquerda',
+      url: 'https://images.unsplash.com/photo-1552519507-da3b142c6e3d?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Vincos de portas e painéis sem repuxo ou repintura estética.',
+    },
+    {
+      id: 'photo-demo1-3',
+      category: 'chassi',
+      label: 'Gravação do Chassi',
+      url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Gravação original a laser nítida e íntegra no assoalho sob banco dianteiro.',
+    },
+  ],
+  score: 100,
+  verdict: 'APROVADO',
+  resumoParecer: 'VEÍCULO APROVADO NO LAUDO CAUTELAR. Estrutura monobloco 100% íntegra em padrão de montadora. Pintura totalmente original de fábrica sem retoques ou massa plástica. Histórico de procedência impecável: sem passagem por leilão, sem sinistros e sem restrições.',
+  apontamentos: [],
+};
+
+// 2. SEGUNDA PLACA — VEÍCULO COM IRREGULARIDADES (DEMO002 - REPROVADO)
+export const DEMO_002_LAUDO: LaudoInspection = {
+  id: 'laudo-demo002-fixo',
+  numeroLaudo: 'LC-DEMO-002/2026',
+  codigoAutenticidade: 'DEMO-002-REPROV-CRIT',
+  dataEmissao: '06/11/2026',
+  horaEmissao: '14:35',
+  cidadeUf: 'São Paulo - SP',
+  enderecoVistoria: 'Unidade Central de Demonstração',
+  vistoriadorNome: 'Perito Vistoriador Demonstrativo',
+  vistoriadorCertificado: 'Ambiente de Testes / Certificação Demonstração',
+  isDemonstrativeScenario: true,
+  demonstrativeDisclaimer: 'DADOS DEMONSTRATIVOS FICTÍCIOS — Cenário de teste para demonstração de veículo com irregularidades. Não constitui informação de base oficial do DETRAN/SENATRAN.',
+  vehicle: {
+    placa: 'DEMO002',
+    marca: 'Volkswagen',
+    modelo: 'Gol',
+    versao: '1.0 MPI Total Flex 12V 5p',
+    anoFab: 2021,
+    anoMod: 2022,
+    cor: 'Prata Sirius',
+    combustivel: 'Flex',
+    cambio: 'Manual',
+    chassi: '9BWAA45U3MT092817',
+    motor: 'CWRA091824',
+    renavam: '01192847192',
+    km: 79200,
+    municipio: 'São Paulo - SP',
+    fipe: {
+      valorFipe: 51400,
+      codigoFipe: '005478-0',
+      mesReferencia: 'Novembro de 2026',
+      comparativoMercado: 'Desvalorização severa (-35% por histórico de leilão e colisão estrutural)',
+    },
+    qtdProprietarios: 3,
+    tipoUsoAnterior: 'Frotista / Locadora',
+    historicoKm: [
+      { data: '14/03/2022', km: 22000, origem: 'Revisão Concessionária', status: 'regular' },
+      { data: '19/09/2023', km: 58400, origem: 'Vistoria de Transferência', status: 'regular' },
+      { data: '06/11/2026', km: 79200, origem: 'Vistoria Cautelar Atual', status: 'adulterado' },
+    ],
+  },
+  docCheck: {
+    leilao: 'Leilão Seguradora Média Monta',
+    sinistro: true,
+    rouboFurto: 'Recuperado de Furto',
+    bloqueioJudicial: 'Bloqueio Policial',
+    debitosMultas: 'Possui débitos pendentes',
+    valorDebitosTotal: 3850,
+    gravame: 'Alienação Fiduciária',
+    recall: 'Recall pendente na montadora',
+  },
+  structuralCheck: DEFAULT_STRUCTURAL_ITEMS.map((item) => {
+    if (item.id === 'longarina_d_esq') {
+      return {
+        ...item,
+        status: 'reprovado' as const,
+        description: 'Corte, emenda e solda irregular fora do padrão de montadora.',
+      };
+    }
+    if (item.id === 'painel_corta_fogo') {
+      return {
+        ...item,
+        status: 'reprovado' as const,
+        description: 'Deformação plástica estrutural por colisão e selante não original.',
+      };
+    }
+    if (item.id === 'coluna_a_esq') {
+      return {
+        ...item,
+        status: 'apontamento' as const,
+        description: 'Vestígio de estiramento mecânico na coluna dianteira esquerda.',
+      };
+    }
+    if (item.id === 'caixa_ar_esq') {
+      return {
+        ...item,
+        status: 'apontamento' as const,
+        description: 'Amassado com perda de geometria original na caixa de ar esquerda.',
+      };
+    }
+    return { ...item, status: 'original' as const };
+  }),
+  paintPanels: DEFAULT_PAINT_PANELS.map((panel) => {
+    if (panel.id === 'capo') {
+      return { ...panel, microns: 395, status: 'massa' as const, notes: 'Presença excessiva de massa plástica de enchimento.' };
+    }
+    if (panel.id === 'paralama_d_esq') {
+      return { ...panel, microns: 420, status: 'massa' as const, notes: 'Massa poliéster e ondulações visíveis na chapa.' };
+    }
+    if (panel.id === 'porta_d_esq') {
+      return { ...panel, microns: 220, status: 'repintura' as const, notes: 'Repintura estética com perda de textura original.' };
+    }
+    if (panel.id === 'paralama_d_dir') {
+      return { ...panel, microns: 185, status: 'repintura' as const, notes: 'Repintura cosmética.' };
+    }
+    return { ...panel, status: 'original' as const };
+  }),
+  mechanicalCheck: {
+    pneus: {
+      dianteiroEsqMm: 1.4,
+      dianteiroDirMm: 1.5,
+      traseiroEsqMm: 3.2,
+      traseiroDirMm: 3.1,
+      estepe: 'Desgastado',
+    },
+    vazamentoFluidos: 'Vazamento ativo de óleo/arrefecimento',
+    vidrosChassi: 'Parabrisa substituído sem gravação',
+    airbagAbs: 'Luz de advertência acesa no painel',
+    motorFuncionamento: 'Ruído mecânico atípico / fumaça visível',
+    etiquetasIdentificacao: 'Etiqueta de coluna ausente',
+  },
+  photos: [
+    {
+      id: 'photo-demo2-1',
+      category: 'frente',
+      label: 'Frente do Veículo (Danos)',
+      url: 'https://images.unsplash.com/photo-1590362891991-f776e747a588?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Desalinhamento frontal grave entre para-choque, para-lama e capô. Pintura repintada com excesso de camada.',
+    },
+    {
+      id: 'photo-demo2-2',
+      category: 'avaria',
+      label: 'Longarina Dianteira Esquerda',
+      url: 'https://images.unsplash.com/photo-1619642751034-765dfdf7c58e?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Solda caseira e corte em perfil estrutural de segurança. Reprovação imediata conforme normas técnicas.',
+    },
+    {
+      id: 'photo-demo2-3',
+      category: 'chassi',
+      label: 'Gravação do Chassi',
+      url: 'https://images.unsplash.com/photo-1617814076367-b759c7d7e738?auto=format&fit=crop&w=800&q=80',
+      aiAnalysis: 'Indício de oxidação e abrasão mecânica em área circundante da gravação.',
+    },
+  ],
+  score: 38,
+  verdict: 'REPROVADO',
+  resumoParecer: 'VEÍCULO REPROVADO NO LAUDO CAUTELAR. Identificada colisão frontal grave com comprometimento estrutural da longarina e painel corta-fogo, histórico de leilão de média monta, presença de massa plástica, pneus carecas e falha no sistema de airbag.',
+  apontamentos: [
+    'REPROVAÇÃO ESTRUTURAL CRÍTICA: Longarina dianteira esquerda com corte e solda irregular fora do padrão de fábrica.',
+    'REPROVAÇÃO ESTRUTURAL: Painel corta-fogo com deformação plástica de impacto.',
+    'Passagem por leilão de seguradora com registro de Média Monta e indenização integral de sinistro.',
+    'Micrômetro elevado com presença de massa plástica no capô (395µm) e para-lama dianteiro esquerdo (420µm).',
+    'Pneus dianteiros abaixo do limite legal TWI (< 1.6mm), risco iminente de aquaplanagem.',
+    'Vazamento ativo de óleo no cofre do motor.',
+    'Luz de falha do sistema de Airbag/ABS permanentemente acesa no painel.',
+    'Parabrisa substituído sem gravação do chassi e débitos pendentes de R$ 3.850.',
+  ],
+};
+
+// As duas placas de demonstração fixas do sistema
 export const DEMO_LAUDOS: LaudoInspection[] = [
-  generateRealVehicleLaudo('BRA2E19', 'Av. Paulista, 1106 - Bela Vista', 'São Paulo - SP'),
-  generateRealVehicleLaudo('ABC1D23', 'Av. Barão de Itapura, 920 - Guanabara', 'Campinas - SP'),
-  generateRealVehicleLaudo('XYZ9K88', 'Rua das Figueiras, 450 - Bairro Jardim', 'Santo André - SP'),
+  DEMO_001_LAUDO,
+  DEMO_002_LAUDO,
 ];
 
-// Quick plate search that checks DEMOs, API or generates realistic vehicle data
+// Quick plate search that prioritizes the 2 fixed demo scenarios, checks history, API, or generates realistic data
 export async function lookupOrGenerateLaudo(
   plate: string,
   address: string,
@@ -500,19 +754,31 @@ export async function lookupOrGenerateLaudo(
 ): Promise<LaudoInspection> {
   const clean = plate.trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
 
-  // 1. Check if plate is already in saved history
+  // 1. PRIMEIRA PLACA — VEÍCULO SEM IRREGULARIDADES (DEMO001 - APROVADO)
+  // Sempre retorna o primeiro exemplo fixo, independente de disponibilidade de API
+  if (clean === 'DEMO001') {
+    return DEMO_001_LAUDO;
+  }
+
+  // 2. SEGUNDA PLACA — VEÍCULO COM IRREGULARIDADES (DEMO002 - REPROVADO)
+  // Sempre retorna o segundo exemplo fixo, independente de disponibilidade de API
+  if (clean === 'DEMO002') {
+    return DEMO_002_LAUDO;
+  }
+
+  // 3. Verifica se a placa pesquisada já está no histórico local do usuário
   const inHistory = existingHistory.find(
     (l) => l.vehicle.placa.replace(/[^A-Z0-9]/g, '') === clean
   );
   if (inHistory) return inHistory;
 
-  // 2. Check demos
+  // 4. Verifica nos demos cadastrados
   const inDemo = DEMO_LAUDOS.find(
     (l) => l.vehicle.placa.replace(/[^A-Z0-9]/g, '') === clean
   );
   if (inDemo) return inDemo;
 
-  // 3. Try server API with Gemini
+  // 5. Demais placas: consulta via servidor / API com Gemini
   try {
     const res = await fetch('/api/lookup-plate', {
       method: 'POST',
@@ -543,7 +809,7 @@ export async function lookupOrGenerateLaudo(
             fipe: {
               valorFipe: d.valorFipe || base.vehicle.fipe.valorFipe,
               codigoFipe: d.codigoFipe || base.vehicle.fipe.codigoFipe,
-              mesReferencia: 'Outubro de 2026',
+              mesReferencia: 'Novembro de 2026',
               comparativoMercado: 'Dentro do valor de mercado',
             },
             qtdProprietarios: d.qtdProprietarios || base.vehicle.qtdProprietarios,
@@ -569,6 +835,6 @@ export async function lookupOrGenerateLaudo(
     console.warn('Server lookup error, using deterministic generator:', err);
   }
 
-  // 4. Guaranteed deterministic generator
+  // 6. Gerador determinístico garantido para placas reais diversas
   return generateRealVehicleLaudo(clean, address, cityState);
 }
